@@ -25,19 +25,18 @@ passport.use(new LinkedInStrategy({
   state: true,
 }, function(accessToken, refreshToken, profile, done) {
 
-  process.nextTick(function () {
-    return done(null, profile);
-  });
-}));
+    console.log(profile);
+    return done(null, {id: profile.id, displayName: profile.displayName});
+  }
+));
 
+// above app.use('/', routes);...
 passport.serializeUser(function(user, done) {
-  done(null, user.id);
+  done(null, user);
 });
 
-passport.deserializeUser(function(id, done) {
-  User.findById(id, function(err, user) {
-    done(err, user);
-  });
+passport.deserializeUser(function(user, done) {
+  done(null, user)
 });
 
 
@@ -54,6 +53,11 @@ app.use(cookieSession({
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(passport.initialize());
 app.use(passport.session());
+
+app.use(function (req, res, next) {
+  res.locals.user = req.user
+  next()
+})
 
 app.use('/', routes);
 app.use('/users', users);
