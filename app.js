@@ -3,6 +3,7 @@ var path = require('path');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var cookieSession = require('cookie-session');
 var LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
 var passport = require('passport')
 
@@ -21,6 +22,7 @@ passport.use(new LinkedInStrategy({
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   callbackURL: process.env.HOST + "/auth/linkedin/callback",
   scope: ['r_emailaddress', 'r_basicprofile'],
+  state: true,
 }, function(accessToken, refreshToken, profile, done) {
 
   process.nextTick(function () {
@@ -43,16 +45,21 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+app.use(cookieSession({
+  name: 'session',
+  keys: [process.env.SESSION_KEY]
+}));
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(passport.initialize());
+app.use(passport.session());
 
 app.use('/', routes);
 app.use('/users', users);
 
 app.get('/auth/linkedin',
-  passport.authenticate('linkedin', { state: 'ss'}),
-  function(req, res){
-  });
+  passport.authenticate('linkedin'));
 
   app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
   successRedirect: '/',
